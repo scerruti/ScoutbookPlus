@@ -1,7 +1,11 @@
 package com.otabi.scoutbooksecure;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.MailTo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,16 +14,16 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
+import intentbuilder.IntentBuilder;
 
 public class MainActivity extends Activity {
-    public static final String HTTPS_WWW_SCOUTBOOK_COM_MOBILE_DASHBOARD = "https://www.scoutbook.com/mobile/dashboard/";
-    public static final List<String> VALID_PROTOCOLS = Arrays.asList("http", "https");
-    public static final String SCOUTBOOK_COM = "scoutbook.com";
+    private static final String HTTPS_WWW_SCOUTBOOK_COM_MOBILE_DASHBOARD = "https://www.scoutbook.com/mobile/dashboard/";
+    private static final String HTTP = "http";
+    private static final String HTTPS = "https";
+    private static final String MAILTO = "mailto";
+    private static final String SCOUTBOOK_COM = "scoutbook.com";
     private static final String TAG = "ScoutbookSecure";
+
     private WebView webView;
     private ProgressBar spinner;
     private View decorView;
@@ -56,26 +60,77 @@ public class MainActivity extends Activity {
     private class SimpleBrowser extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String urlString) {
+            if (urlString == null) {
+                Log.e(TAG, "null urlString");
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Internal Error")
+                        .setMessage("Something funny happened.")
+                        .setNeutralButton(R.string.error_dialog_button,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                }).create().show();
+            }
             Log.i(TAG, urlString);
             spinner.setVisibility(View.VISIBLE);
-            URL url = null;
+            Uri uri;
 
-            try {
-                url = new URL(urlString);
-            } catch (MalformedURLException e) {
-                return false;
+            uri = Uri.parse(urlString).normalizeScheme();
+            if (uri.isRelative()) {
+                uri = uri.buildUpon().scheme(HTTPS).authority(SCOUTBOOK_COM).build();
             }
-            String protocol = url.getProtocol();
-            if (VALID_PROTOCOLS.contains(protocol)) {
-                String host = url.getHost();
-                if (host.endsWith(SCOUTBOOK_COM)) {
-                    view.loadUrl(urlString);
-                    return true;
+            Intent intent = null;
+            switch (uri.getScheme()) {
+                case HTTP:
+                case HTTPS:
+                    String host = uri.getHost();
+                    if (null == host || !host.endsWith(SCOUTBOOK_COM)) {
+                        intent = new Intent(Intent.ACTION_VIEW, uri);
+                    }
+                    break;
+                case MAILTO:
+                    if (MailTo.isMailTo(urlString)) {
+                        MailTo mailTo = MailTo.parse(urlString);
+                        intent = new IntentBuilder()
+                                .action(Intent.ACTION_SEND)
+                                .extra(Intent.EXTRA_EMAIL, defaultString(mailTo.getTo()).split(","))
+                                .extra(Intent.EXTRA_CC, defaultString(mailTo.getCc()).split(","))
+                                .extra(Intent.EXTRA_SUBJECT, defaultString(mailTo.getSubject()))
+                                .extra(Intent.EXTRA_TEXT, defaultString(mailTo.getBody()))
+                                .type("message/rfc822")
+                                .build();
+                    } else {
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Improper Email Link")
+                                .setMessage("This email link could not be parsed.")
+                                .setNeutralButton(R.string.error_dialog_button,
+                                        new DialogInterface.OnClickListener() {
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                dialog.dismiss();
+                                            }
+                                        }).create().show();
+                    }
+                    break;
+                default:
+                    // Otherwise allow the OS to handle it
+                    intent = new Intent(Intent.ACTION_VIEW, uri);
+                    break;
+            }
+            if (null != intent) {
+                try {
+                    startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Security Restriction")
+                            .setMessage("This device does not allow that action.")
+                            .setNeutralButton(R.string.error_dialog_button,
+                                    new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            dialog.dismiss();
+                                        }
+                                    }).create().show();
                 }
-            } else {
-                // Otherwise allow the OS to handle it
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(urlString));
-                startActivity(intent);
                 return true;
             }
             return false;
@@ -87,6 +142,14 @@ public class MainActivity extends Activity {
             webView.setVisibility(View.VISIBLE);
             spinner.setVisibility(View.GONE);
 
+        }
+
+        protected String defaultString(String string) {
+            if (null == string) {
+                return "";
+            } else {
+                return string;
+            }
         }
     }
 }
