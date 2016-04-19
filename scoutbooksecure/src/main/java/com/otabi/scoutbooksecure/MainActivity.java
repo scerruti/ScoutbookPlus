@@ -2,6 +2,7 @@ package com.otabi.scoutbooksecure;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -15,7 +16,6 @@ import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 
 import intentbuilder.IntentBuilder;
 
@@ -32,6 +32,7 @@ public class MainActivity extends Activity {
     private View decorView;
     private int animationDuration;
 
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +44,7 @@ public class MainActivity extends Activity {
                 android.R.integer.config_shortAnimTime);
 
         loadingView = (LinearLayout) findViewById(R.id.loading);
+        loadingView.setVisibility(View.VISIBLE);
         AndroidBug5497Workaround.assistActivity(this);
 
         webView = (WebView) findViewById(R.id.webView);
@@ -82,7 +84,6 @@ public class MainActivity extends Activity {
                                 }).create().show();
             }
             Log.i(TAG, urlString);
-            crossFade(loadingView, webView);
             Uri uri;
 
             uri = Uri.parse(urlString).normalizeScheme();
@@ -148,8 +149,9 @@ public class MainActivity extends Activity {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            crossFade(webView, loadingView);
-
+            if (View.VISIBLE == loadingView.getVisibility()) {
+                crossFade(webView, loadingView);
+            }
         }
 
         protected String defaultString(String string) {
