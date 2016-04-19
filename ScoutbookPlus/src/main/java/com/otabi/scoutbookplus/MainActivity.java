@@ -1,4 +1,4 @@
-package com.otabi.scoutbooksecure;
+package com.otabi.scoutbookplus;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -25,7 +25,7 @@ public class MainActivity extends Activity {
     private static final String HTTPS = "https";
     private static final String MAILTO = "mailto";
     private static final String SCOUTBOOK_COM = "scoutbook.com";
-    private static final String TAG = "ScoutbookSecure";
+    private static final String TAG = "ScoutbookPlus";
 
     private WebView webView;
     private LinearLayout loadingView;

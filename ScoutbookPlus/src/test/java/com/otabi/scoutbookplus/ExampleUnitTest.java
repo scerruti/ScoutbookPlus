@@ -1,4 +1,4 @@
-package com.otabi.scoutbooksecure;
+package com.otabi.scoutbookplus;
 
 import org.junit.Test;
 

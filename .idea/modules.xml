@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ScoutbookSecure.iml" filepath="$PROJECT_DIR$/ScoutbookSecure.iml" />
-      <module fileurl="file://$PROJECT_DIR$/scoutbooksecure/scoutbooksecure.iml" filepath="$PROJECT_DIR$/scoutbooksecure/scoutbooksecure.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ScoutbookPlus.iml" filepath="$PROJECT_DIR$/ScoutbookPlus.iml" />
+      <module fileurl="file://$PROJECT_DIR$/scoutbookplus/ScoutbookPlus-ScoutbookPlus.iml" filepath="$PROJECT_DIR$/scoutbookplus/ScoutbookPlus-ScoutbookPlus.iml" />
     </modules>
   </component>
 </project>

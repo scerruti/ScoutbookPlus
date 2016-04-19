@@ -1,4 +1,4 @@
-package com.otabi.scoutbooksecure;
+package com.otabi.scoutbookplus;
 
 import android.app.Activity;
 import android.graphics.Rect;

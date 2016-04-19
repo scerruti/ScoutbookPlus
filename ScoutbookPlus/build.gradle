@@ -1,14 +1,12 @@
-import org.ajoberstar.grgit.*
-
 plugins {
     id 'org.ajoberstar.grgit' version '1.4.2'
 }
 
 apply plugin: 'com.android.application'
 
-if(project.hasProperty("ScoutbookSecure.signing")
-        && new File(project.property("ScoutbookSecure.signing") + ".gradle").exists()) {
-    apply from: project.property("ScoutbookSecure.signing") + ".gradle";
+if(project.hasProperty("ScoutbookPlus.signing")
+        && new File((String) project.property("ScoutbookPlus.signing") + ".gradle").exists()) {
+    apply from: project.property("ScoutbookPlus.signing") + ".gradle";
 }
 
 repositories {
@@ -16,7 +14,7 @@ repositories {
 }
 
 ext {
-    git = Grgit.open()
+    git = org.ajoberstar.grgit.Grgit.open(dir: ".")
     gitVersionCode = git.tag.list().size() + 2
     gitVersionName = "${git.describe()}"
 }
@@ -26,7 +24,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "com.otabi.scoutbooksecure"
+        applicationId "com.otabi.scoutbookplus"
         minSdkVersion 19
         targetSdkVersion 23
         versionCode gitVersionCode
@@ -43,6 +41,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.1.1'
+    compile 'com.android.support:appcompat-v7:23.3.0'
     compile 'com.robertoestivill.intentbuilder:intentbuilder:0.1.1'
 }
