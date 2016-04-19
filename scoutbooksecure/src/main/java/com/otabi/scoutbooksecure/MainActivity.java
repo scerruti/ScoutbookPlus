@@ -1,5 +1,7 @@
 package com.otabi.scoutbooksecure;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -12,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 import intentbuilder.IntentBuilder;
@@ -25,8 +28,9 @@ public class MainActivity extends Activity {
     private static final String TAG = "ScoutbookSecure";
 
     private WebView webView;
-    private ProgressBar spinner;
+    private LinearLayout loadingView;
     private View decorView;
+    private int animationDuration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +38,12 @@ public class MainActivity extends Activity {
         decorView = getWindow().getDecorView();
         decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         setContentView(R.layout.activity_main);
-        spinner = (ProgressBar) findViewById(R.id.loadingSpinner);
+        // Retrieve and cache the system's default "short" animation time.
+        animationDuration = getResources().getInteger(
+                android.R.integer.config_shortAnimTime);
+
+        loadingView = (LinearLayout) findViewById(R.id.loading);
+        AndroidBug5497Workaround.assistActivity(this);
 
         webView = (WebView) findViewById(R.id.webView);
         webView.setWebViewClient(new SimpleBrowser());
@@ -73,7 +82,7 @@ public class MainActivity extends Activity {
                                 }).create().show();
             }
             Log.i(TAG, urlString);
-            spinner.setVisibility(View.VISIBLE);
+            crossFade(loadingView, webView);
             Uri uri;
 
             uri = Uri.parse(urlString).normalizeScheme();
@@ -139,8 +148,7 @@ public class MainActivity extends Activity {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            webView.setVisibility(View.VISIBLE);
-            spinner.setVisibility(View.GONE);
+            crossFade(webView, loadingView);
 
         }
 
@@ -151,5 +159,34 @@ public class MainActivity extends Activity {
                 return string;
             }
         }
+
+    }
+
+    private void crossFade(final View viewIn, final View viewOut) {
+
+        // Set the content view to 0% opacity but visible, so that it is visible
+        // (but fully transparent) during the animation.
+        viewIn.setAlpha(0f);
+        viewIn.setVisibility(View.VISIBLE);
+
+        // Animate the content view to 100% opacity, and clear any animation
+        // listener set on the view.
+        viewIn.animate()
+                .alpha(1f)
+                .setDuration(animationDuration)
+                .setListener(null);
+
+        // Animate the loading view to 0% opacity. After the animation ends,
+        // set its visibility to GONE as an optimization step (it won't
+        // participate in layout passes, etc.)
+        viewOut.animate()
+                .alpha(0f)
+                .setDuration(animationDuration)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        viewOut.setVisibility(View.GONE);
+                    }
+                });
     }
 }

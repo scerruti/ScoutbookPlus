@@ -3,10 +3,4 @@
 
     <item android:drawable="@color/tan" />
 
-    <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/scoutbook_plus" />
-    </item>
-
 </layer-list>
