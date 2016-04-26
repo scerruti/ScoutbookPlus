@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Scoutbook Plus</string>
+    <string name="app_name">Handbook Plus</string>
     <string name="error_dialog_button">OK</string>
     <string name="loading">loading…</string>
+    <string name="green_sliders">Green Sliders</string>
+    <string name="settings">Settings</string>
+    <string name="scoutbook_plus">Handbook Plus</string>
 </resources>

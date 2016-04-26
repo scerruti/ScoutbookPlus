@@ -4,7 +4,7 @@ plugins {
 
 apply plugin: 'com.android.application'
 
-if(project.hasProperty("ScoutbookPlus.signing")
+if (project.hasProperty("ScoutbookPlus.signing")
         && new File((String) project.property("ScoutbookPlus.signing") + ".gradle").exists()) {
     apply from: project.property("ScoutbookPlus.signing") + ".gradle";
 }
@@ -21,7 +21,7 @@ ext {
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion "23.0.3"
 
     defaultConfig {
         applicationId "com.otabi.scoutbookplus"
@@ -30,6 +30,7 @@ android {
         versionCode gitVersionCode
         versionName gitVersionName
     }
+
     buildTypes {
         release {
             minifyEnabled false

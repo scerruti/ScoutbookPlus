@@ -11,11 +11,17 @@ import android.content.Intent;
 import android.net.MailTo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
+import android.widget.Switch;
+
+import java.io.InputStream;
+import java.util.Observable;
+import java.util.Observer;
 
 import intentbuilder.IntentBuilder;
 
@@ -25,12 +31,14 @@ public class MainActivity extends Activity {
     private static final String HTTPS = "https";
     private static final String MAILTO = "mailto";
     private static final String SCOUTBOOK_COM = "scoutbook.com";
-    private static final String TAG = "ScoutbookPlus";
+    static final String TAG = "ScoutbookPlus";
 
     private WebView webView;
     private LinearLayout loadingView;
     private View decorView;
     private int animationDuration;
+    private Switch greenSliders;
+    private CssInjection cssInjection;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -42,6 +50,10 @@ public class MainActivity extends Activity {
         // Retrieve and cache the system's default "short" animation time.
         animationDuration = getResources().getInteger(
                 android.R.integer.config_shortAnimTime);
+
+        cssInjection = new CssInjection(false, this);
+        greenSliders = (Switch) findViewById(R.id.greenSliders);
+        greenSliders.setOnCheckedChangeListener(cssInjection);
 
         loadingView = (LinearLayout) findViewById(R.id.loading);
         loadingView.setVisibility(View.VISIBLE);
@@ -68,7 +80,17 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class SimpleBrowser extends WebViewClient {
+    public void reload() {
+        if (webView != null) {
+            webView.reload();
+        }
+    }
+
+    private class SimpleBrowser extends WebViewClient implements Observer {
+        public SimpleBrowser() {
+            super();
+        }
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String urlString) {
             if (urlString == null) {
@@ -149,8 +171,34 @@ public class MainActivity extends Activity {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
+            if (cssInjection.isOn()) {
+                Log.i(TAG, "injecting green sliders css");
+                injectCSS();
+            }
             if (View.VISIBLE == loadingView.getVisibility()) {
                 crossFade(webView, loadingView);
+            }
+        }
+
+        // Inject CSS method: read style.css from assets folder
+        // Append stylesheet to document head
+        private void injectCSS() {
+            try {
+                InputStream inputStream = getAssets().open("greenSliders.css");
+                byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
+                inputStream.close();
+                String encoded = Base64.encodeToString(buffer, Base64.NO_WRAP);
+                webView.loadUrl("javascript:(function() {" +
+                        "var parent = document.getElementsByTagName('head').item(0);" +
+                        "var style = document.createElement('style');" +
+                        "style.type = 'text/css';" +
+                        // Tell the browser to BASE64-decode the string into your script !!!
+                        "style.innerHTML = window.atob('" + encoded + "');" +
+                        "parent.appendChild(style)" +
+                        "})()");
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
@@ -162,6 +210,11 @@ public class MainActivity extends Activity {
             }
         }
 
+        @Override
+        public void update(Observable observable, Object data) {
+            Log.i(TAG, "View reloading, green sliders state change.");
+            webView.reload();
+        }
     }
 
     private void crossFade(final View viewIn, final View viewOut) {
