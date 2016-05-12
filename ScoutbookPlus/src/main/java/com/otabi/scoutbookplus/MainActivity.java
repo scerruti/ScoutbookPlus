@@ -11,14 +11,18 @@ import android.content.Intent;
 import android.net.MailTo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Observable;
 import java.util.Observer;
@@ -37,7 +41,6 @@ public class MainActivity extends Activity {
     private LinearLayout loadingView;
     private View decorView;
     private int animationDuration;
-    private Switch greenSliders;
     private CssInjection cssInjection;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -52,18 +55,34 @@ public class MainActivity extends Activity {
                 android.R.integer.config_shortAnimTime);
 
         cssInjection = new CssInjection(false, this);
-        greenSliders = (Switch) findViewById(R.id.greenSliders);
+        Switch greenSliders = (Switch) findViewById(R.id.greenSliders);
         greenSliders.setOnCheckedChangeListener(cssInjection);
 
         loadingView = (LinearLayout) findViewById(R.id.loading);
         loadingView.setVisibility(View.VISIBLE);
         AndroidBug5497Workaround.assistActivity(this);
 
-        webView = (WebView) findViewById(R.id.webView);
-        webView.setWebViewClient(new SimpleBrowser());
+        FrameLayout layout = (FrameLayout) findViewById(R.id.main_layout);
+        webView = new WebView(this);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
-        webView.loadUrl(HTTPS_WWW_SCOUTBOOK_COM_MOBILE_DASHBOARD);
+
+        if (savedInstanceState != null) {
+            webView.restoreState(savedInstanceState);
+        } else {
+            webView.setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.tan));
+            webView.setVisibility(View.GONE);
+            webView.setWebViewClient(new SimpleBrowser());
+            webView.loadUrl(HTTPS_WWW_SCOUTBOOK_COM_MOBILE_DASHBOARD);
+        }
+        layout.addView(webView);
+    }
+
+    // Save the state of the web view when the screen is rotated.
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        webView.saveState(outState);
     }
 
     @Override
@@ -184,10 +203,7 @@ public class MainActivity extends Activity {
         // Append stylesheet to document head
         private void injectCSS() {
             try {
-                InputStream inputStream = getAssets().open("greenSliders.css");
-                byte[] buffer = new byte[inputStream.available()];
-                inputStream.read(buffer);
-                inputStream.close();
+                byte[] buffer = readBytes(getAssets().open("greenSliders.css"));
                 String encoded = Base64.encodeToString(buffer, Base64.NO_WRAP);
                 webView.loadUrl("javascript:(function() {" +
                         "var parent = document.getElementsByTagName('head').item(0);" +
@@ -200,6 +216,24 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        public byte[] readBytes(InputStream inputStream) throws IOException {
+            // this dynamically extends to take the bytes you read
+            ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+
+            // this is storage overwritten on each iteration with bytes
+            int bufferSize = 1024;
+            byte[] buffer = new byte[bufferSize];
+
+            // we need to know how may bytes were read to write them to the byteBuffer
+            int len;
+            while (inputStream.available() >0 && (len = inputStream.read(buffer)) != -1) {
+                byteBuffer.write(buffer, 0, len);
+            }
+
+            // and then we can return your byte array.
+            return byteBuffer.toByteArray();
         }
 
         protected String defaultString(String string) {
